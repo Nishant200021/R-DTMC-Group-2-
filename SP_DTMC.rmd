@@ -1,0 +1,297 @@
+---
+title: "Stochastic DTMC"
+author: "Vidya Mallick"
+date: "01/12/2021"
+output: word_document
+---
+
+DTMC
+a. Take input as the TPM for irreducible markov chain
+b. Find Steady State Behavior by solving equations.
+c. Simulate this for multiple runs
+d. Find behavior from the simulation perspective 
+e. Identification of recurrent / transient states  and classes 
+
+
+WEATHER PROBLEM
+ 
+Problem Statement: It is given that, if today is rainy day then the probability that tomorrow will be a rainy day is 0.5 and the chances to be nice and snowy weather are respectively 0.25 and 0.25. The chances for rainy, nice and snowy weather if today is a nice day are 0.5,0 and 0.5. If today is a snowy day the chances for rainy, nice and snowy weather are 0.25,0.25 and 0.5 respectively. 
+
+
+```{r}
+#install.packages("markovchain")
+library(markovchain)
+```
+## To find the TPM:
+
+```{r}
+WeatherStatespace=c("Rainy","Sunny")
+WeatherTPM=matrix(c(0.7,0.3,0.2,0.8),nrow=2,byrow=TRUE,dimnames=list(WeatherStatespace,WeatherStatespace))
+WeatherTPM
+```
+The above matrix shows the Transition Probability matrix for Weather Problem.
+
+## Creating Markovchain object using markovchain function
+
+```{r}
+WeatherMC=new("markovchain",states=WeatherStatespace,byrow=T,transitionMatrix=WeatherTPM,name="Weather problem")
+WeatherMC
+```
+## Check if its Irreducible:
+
+```{r}
+is.irreducible(WeatherMC)
+```
+The Markov Chain - "WeatherMC" is irreducible.
+
+## Plotting the transition diagram
+
+```{r}
+#install.packages("diagram")
+library(diagram)
+```
+
+```{r}
+## Loading required package: shape
+plotmat(WeatherTPM,pos=c(1,1),lwd=1,box.lwd = 1,cex.tex=0.5,box.size = 0.1,box.type = "circle",box.prop = 0.4,box.col = "light yellow",arr.length = 0.1,arr.width = 0.1,self.cex = 0.4,self.shifty = -0.01,self.shiftx = 0.13,main = "Transition Diagram")
+```
+
+The above diagram shows the transition between the various states i.e between Rainy and Sunny.
+
+## Checking Accessibility
+
+```{r}
+is.accessible(WeatherMC)
+```
+## Communicative States
+
+```{r}
+communicatingClasses(WeatherMC)
+```
+
+## Finding Higher Transition probabilities
+
+## 2-step and 5-step TPMs
+
+2-Step
+
+```{r}
+WeatherMC^2
+```
+
+Inference: The above shows that if today is a rainy day then in a two step process the probability for tomorrow to be a rainy day is explained as follows:
+Probability = P(Rainy today & tomorrow)+ P(Rainy today x Sunny Tomorrow) = (0.7 x 0.7) + (0.3 x 0.2 = 0.55
+Similarly, the same can be applied for 5 step, the output is shown below.
+
+5-Step
+
+```{r}
+WeatherMC^5
+```
+Inference: 
+
+## Steady state probabilities:
+
+```{r}
+steadyStates(WeatherMC)
+```
+
+From the above table we can see that with a large number of transitions the probability of the weather at steady state will be: Chances of being a rainy day is 40% Chances of being a nice day is 20% Chances of being a Snowy day is 40%
+
+## Probability that Wednesday to be Sunny if Monday is a rainy day
+
+```{r}
+WeatherMC^2
+```
+
+From the above table the prabability that Wednesday is a Snowy if Monday is Rainy day is 0.45. This is because there are 2 transitions . From monday to tuesday and from tuesday to wednesday. In the so formed 2 square transition matrix we choose 1st row 3rd column to find probability of snowy day if it is rainy.
+
+## Probability of weather to be either "Rainy" or "Sunny" after 30 days based on initial probability.
+
+```{r}
+initial=c(0.5,0.5)
+prob_30 = initial*WeatherMC^30
+prob_30
+```
+The above matrix shows how the weather would behave after 30 days. We can see that, there is a 40% chance for the weather to be "Rainy" and a 60% chance for the weather to be "Sunny".
+
+## Probability that it is rainy after 12 days when the initial probability is given
+
+```{r}
+initial=c(0.5,0.5)
+prob_12 = initial*WeatherMC^12
+prob_12[1]
+```
+There is 40% chance that it will be raining after 12 days if the initial probability is given.
+
+## Identification of recurrent / transient states  and classes
+
+#To find the recurrent states
+
+```{r}
+recurrentStates(WeatherMC)
+```
+
+
+#To find the transient States
+
+```{r}
+transientStates(WeatherMC)
+```
+
+
+#To find the recurrent Classes
+
+```{r}
+recurrentClasses(WeatherMC)
+```
+
+#To find the transient Classes
+
+```{r}
+transientClasses(WeatherMC)
+```
+
+#summary of DTMC
+
+```{r}
+summary(WeatherMC)
+```
+
+#simulation
+
+```{r}
+#install.packages("tibble")
+library(tibble)
+```
+
+
+```{r}
+weathersOfDays <- rmarkovchain(n = 365, object = WeatherMC,initial)
+weathersOfDays 
+weathersOfDays[1:30]
+enframe(weathersOfDays)
+```
+
+
+## Conclusion:
+
+We concluded that along with finding transition probability matrix one can also obtain the steady states policy and also find dependent probability . We also found 2 and 5 step transition probability matrix. This shows r can help in formulating markov chain problems
+
+
+## STOCK MARKET
+
+Problem Statement: An open stock market is exhibiting a bull market, bear market, or stagnant market trend during a given week. A bull week is followed by another bull week 90% of the time, a bear week 7.5% of the time, and a stagnant week the other 2.5% of the time. A bear week is followed by another bear week 80% of the time, a bull week 15% of the time and a stagnant week 5% of the time. There is a 25% chance that a stagnant week is followed by a bull week and 50% for followed by a bear week.
+
+## AIM: To understand the changes in the Stock Market using Markov Chain and the theory of probabilities in Stochastic Processes. 
+
+## PROCEDURE:
+
+## TPM and Markov Chain
+
+```{r}
+MarketStatespace=c("Bull","Bear","Stagnant")
+MarketTPM=matrix(c(0.9,0.075,0.025,0.15,0.8,0.05,0.25,0.5,0.25),nrow=3,byrow=TRUE,dimnames=list(MarketStatespace,MarketStatespace))
+MarketTPM
+```
+
+```{r}
+MarketMC=new("markovchain",states=MarketStatespace,byrow=T,transitionMatrix=MarketTPM,name="Market problem")
+MarketMC
+
+```
+
+## Communicating Classes
+
+```{r}
+communicatingClasses(MarketMC)
+```
+## Irreducibility
+
+```{r}
+is.irreducible(MarketMC)
+```
+
+## probability that the market is stagnant after 7 weeks
+
+```{r}
+initial=c(0.2,0.5,0.3)
+prob_7 = initial*MarketMC^7
+prob_7[3]
+
+```
+There is a 4.5% that the market is stagnant after 7 weeks.
+
+# State Probabilities at nth step when initial probability is given
+
+If the initial probability distribution is given by (0.2,0.5,0.3) then find the probability that the market is exhibiting a bear market after 4 weeks given that initially, the market is stagnant.
+
+```{r}
+x0 = 0.2 #bull 
+x1 = 0.5 #bear
+x2 = 0.3 #stagnant
+
+init_4 = conditionalDistribution(MarketMC^4,"Stagnant")[2]
+init_4
+
+```
+Initial state of the market being at Stagnant, the probability that after 4 weeks the market is Bear is 0.4694375. Therefore there is a 46.9% chance.
+
+# Suppose the market exhibits a bull market in the initial week find the joint probability that the market exhibits a bull market after 6 weeks and a stagnant market after 12 weeks.
+
+```{r}
+Pr=initial[1]*conditionalDistribution(MarketMC^6,"Bull")[1]*
+conditionalDistribution(MarketMC^12,"Bull")[3]
+Pr
+```
+Given Initial market state as “Bull”, the probability that after 6 weeks going to Bull and then after 12 weeks reaching Stagnant market is 0.005825353
+
+## Identification of recurrent / transient states  and classes
+
+#To find the recurrent states
+
+```{r}
+recurrentStates(MarketMC)
+```
+
+
+#To find the transient States
+
+```{r}
+transientStates(MarketMC)
+```
+
+
+#To find the recurrent Classes
+
+```{r}
+recurrentClasses(MarketMC)
+```
+
+#To find the transient Classes
+
+```{r}
+transientClasses(MarketMC)
+```
+
+#summary of DTMC
+
+```{r}
+summary(MarketMC)
+```
+
+#simulation
+
+```{r}
+Market_w <- rmarkovchain(n = 365, object = MarketMC,initial)
+Market_w 
+Market_w[1:30]
+enframe(Market_w)
+```
+
+
+## Conclusion:
+
+From the above procedures we can find the changes in the Stock Market from the three different states, “Bull” , “Bear” and “Stagnant”. And we can predict the probability of a market state given the initial probability.
+
+
